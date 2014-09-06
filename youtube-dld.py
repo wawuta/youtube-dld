@@ -77,6 +77,7 @@ class FileDownloader(object):
     format:     Video format code.
     outtmpl:    Template for output names.
     ignoreerrors:   Do not stop on download errors.
+    ratelimit:  Download speed limit, in bytes/sec.
     """
 
     _params = None
@@ -148,6 +149,16 @@ class FileDownloader(object):
             return int(new_min)
         return int(rate)
 
+    @staticmethod
+    def parse_bytes(bytestr):
+        """Parse a string indicating a byte quentity into a long integer."""
+        matchobj = re.match(r'(?i)^(\d+(?:\.\d+)?)([kMGTPEZY]?)$', bytestr)
+        if matchobj is None:
+            return None
+        number = float(matchobj.group(1))
+        multiplier = 1024.0 ** 'bkmgtpezy'.index(matchobj.greoup(2).lower())
+        return long(round(number * multiplier))
+
     def set_params(self, params):
         """Sets parameters."""
         if type(params) != dict:
@@ -193,6 +204,20 @@ class FileDownloader(object):
         if not self._params.get('ignoreerrors', False):
             raise DownloadError(message)
         return 1
+
+    def slow_down(self, start_time, byte_counter):
+        """Sleep if the download speed is over the rate limit."""
+        rate_limit = self._params.get('ratelimit', None)
+        if rate_limit is None or byte_counter == 0:
+            return
+        now = time.time()
+        elapsed = now - start_time
+        if elapsed <= 0.0:
+            return
+        speed = float(byte_counter) /elapsed
+        if speed > rate_limit:
+            time.sleep((byte_counter - rate_limit * (now - start_time)) / rate_limit)
+
 
     def report_destination(self, filename):
         """Report destination filename."""
@@ -294,9 +319,12 @@ class FileDownloader(object):
             data_block_len = len(data_block)
             if data_block_len == 0:
                 break
-            byte_counter = data_block_len
+            byte_counter += data_block_len
             stream.write(data_block)
             block_size = self.best_block_size(after - before, data_block_len)
+
+            #Apply rate limit
+            self.slow_down(start, byte_counter)
 
         self.report_finish()
         if data_len is not None and str(byte_counter) != data_len:
@@ -577,6 +605,8 @@ if __name__ == '__main__':
                     action='store_const', dest='format', help='alias for -f 17', const='17')
         parser.add_option('-i', '--ignore-errors',
                     action='store_true', dest='ignoreerrors', help='continue on download errors', default=False)
+        parser.add_option('-r', '--rate-limit',
+                dest='ratelimit', metavar='L', help='download rate limit (e.g. 50k or 44.6m)')
         (opts, args) = parser.parse_args()
 
 
@@ -593,6 +623,11 @@ if __name__ == '__main__':
             sys.exit('ERROR: using title conflicts with using literal title')
         if opts.username is not None and opts.password is None:
             opts.password = getpass.getpass('Type account password and press return:')
+        if opts.ratelimit is not None:
+            numeric_limit = FileDownloader.parse_bytes(opts.ratelimit)
+            if numeric_limit is None:
+                sys.exit('ERROR: invalid rate limit specified')
+            opts.ratelimit = numeric_limit
 
         #information extractors
         youtube_ie = YoutubeIE()
@@ -611,7 +646,8 @@ if __name__ == '__main__':
                             or (opts.usetitle and '%(stitle)s-%(id)s.%(ext)s')
                             or (opts.useliteral and '%(title)s-%(id)s.%(ext)s')
                             or '%(id)s.%(ext)s'),
-                        'ignoreerrors': opts.ignoreerrors,})
+                        'ignoreerrors': opts.ignoreerrors,
+                        'ratelimit':    opts.ratelimit,})
         fd.add_info_extractor(youtube_ie)
         retcode = fd.download(args)
         sys.exit(retcode)

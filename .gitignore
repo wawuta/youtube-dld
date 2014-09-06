@@ -9,11 +9,12 @@ build/
 dist/
 MANIFEST
 README.txt
-youtube-dl.1
-youtube-dl.bash-completion
-youtube-dl
-youtube-dl.exe
-youtube-dl.tar.gz
+youtube-dld.1
+youtube-dld.bash-completion
+youtube-dld
+youtube-dld.exe
+youtube-dld.tar.gz
+youtube-dld-*
 .coverage
 cover/
 updates_key.pem
