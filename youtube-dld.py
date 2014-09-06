@@ -154,8 +154,15 @@ class FileDownloader(object):
         '''Print message to stderr.'''
         sys.stderr.write('%s\n' % message)
 
+    def fixed_template(self):
+        '''Checks if the output template is fixed.'''
+        return (re.search(ur'%\(.+?\)s', self._params['outtmpl']) is None)
+
     def download(self, url_list):
         '''Download a given list of URLs.'''
+        if len(url_list) > 1 and self.fixed_template():
+            sys.exit('ERROR: fixed output name but more than one file to download')
+
         for url in url_list:
             suitable_found = False
             for ie in self._ies:
@@ -165,7 +172,7 @@ class FileDownloader(object):
                 suitable_found = True
                 results = [x for x in ie.extract(url) if x is not None]
 
-                if (len(url_list) > 1 or len(results) > 1) and re.search(r'%\(.+?\)s', self._params['outtempl']) is None:
+                if len(results) > 1 and self.fixed_template():
                     sys.exit('ERROR: fixed output name but more than one file to download')
 
 
