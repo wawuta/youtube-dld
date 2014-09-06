@@ -3,7 +3,7 @@ import hashlib
 import subprocess
 
 template = file('index.html.in', 'r').read()
-version = subprocess.Popen(['./youtube-dld.py', '--version'], stdout =subprocess.PIPE).communicate()[0]
+version = subprocess.Popen(['./youtube-dld.py', '--version'], stdout =subprocess.PIPE).communicate()[0].strip()
 data = file('youtube-dld.py', 'rb').read()
 md5sum=hashlib.md5(data).hexdigest()
 sha1sum=hashlib.sha1(data).hexdigest()

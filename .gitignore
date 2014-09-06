@@ -30,3 +30,5 @@ updates_key.pem
 test/testdata
 .tox
 .idea/
+*.html
+*.iml
