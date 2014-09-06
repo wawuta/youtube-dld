@@ -25,7 +25,7 @@ std_headers = {
 simple_title_chars = string.ascii_letters.decode('ascii') + string.digits.decode('ascii')
 
 class FileDownloader(object):
-    ''' File Downloader class.
+    """ File Downloader class.
 
     File downloader objects are the ones responsible of downloading the
     actual video file and writing it to disk if the user has requested
@@ -59,8 +59,8 @@ class FileDownloader(object):
     simulate:   Do not download the video files
     format:     Video format code.
     outtmpl:    Template for output names.
-
-    '''
+    ignoreerrors:   Do not stop on download errors.
+    """
 
     _params = None
     _ies = []
@@ -131,37 +131,53 @@ class FileDownloader(object):
         return int(rate)
 
     def set_params(self, params):
-        '''Sets parameters.'''
+        """Sets parameters."""
         if type(params) != dict:
             raise ValueError('params: dictionary expected')
         self._params = params
 
     def get_params(self):
-        '''get parameters.'''
+        """get parameters."""
         return self._params
 
     def add_info_extractor(self, ie):
-        '''Add an infoExtractor object to the end of the list.'''
+        """Add an infoExtractor object to the end of the list."""
         self._ies.append(ie)
         ie.set_downloader(self)
 
     def to_stdout(self, message, skip_eol=False):
-        '''Print message to stdout if not in quiet mode.'''
+        """Print message to stdout if not in quiet mode."""
         if not self._params.get('quiet', False):
             sys.stdout.write('%s%s' % (message, ['\n', ''][skip_eol]))
             sys.stdout.flush()
 
 
     def to_stderr(self, message):
-        '''Print message to stderr.'''
+        """Print message to stderr."""
         sys.stderr.write('%s\n' % message)
 
     def fixed_template(self):
-        '''Checks if the output template is fixed.'''
+        """Checks if the output template is fixed."""
         return (re.search(ur'(?u)%\(.+?\)s', self._params['outtmpl']) is None)
 
+
+    def trouble(self, message=None):
+        """ Determine action to take when a download problem appears.
+        
+        Depending on if the downloader has been configured to ignore
+        download errors or not, this method may exit the program or
+        not when errors are found, after printing the message. If it
+        doesn't exit, it returns an error code suitable to be returned
+        later as a program exit code to indicate error.
+        """
+        if message is not None:
+            self.to_stderr(message)
+        if not self._params.get('ignoreerrors', False):
+            sys.exit(1)
+        return 1
+
     def download(self, url_list):
-        '''Download a given list of URLs.'''
+        """Download a given list of URLs."""
         retcode = 0
         if len(url_list) > 1 and self.fixed_template():
             sys.exit('ERROR: fixed output name but more than one file to download')
@@ -176,7 +192,7 @@ class FileDownloader(object):
                 all_results = ie.extract(url)
                 results = [x for x in all_results if x is not None]
                 if len(results) != len(all_results):
-                    recode = 1
+                    retcode = self.trouble()
 
                 if len(results) > 1 and self.fixed_template():
                     sys.exit('ERROR: fixed output name but more than one file to download')
@@ -198,36 +214,30 @@ class FileDownloader(object):
                     try:
                         filename = self._params['outtmpl'] % result
                     except (ValueError, KeyError), err:
-                        self.to_stderr('ERROR: invalid output template: %s' % str(err))
-                        retcode = 1
+                        retcode = self.trouble('ERROR: invalid output template: %s' % str(err))
                         continue
                     try:
                         self.pmkdir(filename)
                     except (OSError, IOError), err:
-                        self.to_stderr('ERROR: unable to create directories: %s\n' % str(err))
-                        retcode = 1
+                        retcode = self.trouble('ERROR: unable to create directories: %s\n' % str(err))
                         continue
                     try:
                         outstream = open(filename, 'wb')
                     except (OSError, IOError), err:
-                        self.to_stderr('ERROR: unable to open for writing: %s\n' % str(err))
-                        retcode = 1
+                        retcode = self.trouble('ERROR: unable to open for writing: %s\n' % str(err))
                         continue
                     try:
                         self._do_download(outstream, result['url'])
                         outstream.close()
                     except (OSError, IOError), err:
-                        self.to_stderr('ERROR: unable to write video data: %s\n' % str(err))
-                        retcode = 1
+                        retcode = self.trouble('ERROR: unable to write video data: %s\n' % str(err))
                         continue
                     except (urllib2.URLError, httplib.HTTPException, socket.error), err:
-                        self.to_stderr('ERROR: unable to download video data: f%s\n' % str(err))
-                        retcode = 1
+                        retcode = self.trouble('ERROR: unable to download video data: f%s\n' % str(err))
                         continue
                 break
             if not suitable_found:
-                self.to_stderr('ERROR: no suitable InfoExtractor: %s\n' % url)
-                retcode = 1
+                retcode = self.trouble('ERROR: no suitable InfoExtractor: %s\n' % url)
         return retcode
 
     def _do_download(self, stream, url):
@@ -262,7 +272,7 @@ class FileDownloader(object):
             raise ValueError('Content too short: %s/%s bytes' % (byte_counter, data_len))
 
 class InfoExtractor(object):
-    '''Information Extractor class.
+    """Information Extractor class.
 
     Information extractors are the classes that, given a URL, extract
     information from the video (or videos) the URL refers to. This
@@ -283,34 +293,34 @@ class InfoExtractor(object):
     _real_extract() methods, as well as the suitable() static method.
     Probably, they should also be instantiated and added to the main
     downloader.
-    '''
+    """
 
     _ready = False
     _downloader = None
 
     def __init__(self, downloader = None):
-        '''Constructor. Receives an optional downloader.'''
+        """Constructor. Receives an optional downloader."""
         self._ready = False
         self.set_downloader(downloader)
 
     @staticmethod
     def suitable(url):
-        '''Receives a URL and returns True if suitable for this IE.'''
+        """Receives a URL and returns True if suitable for this IE."""
         return True
 
     def initialize(self):
-        '''Initializes an instance (login, etc).'''
+        """Initializes an instance (login, etc)."""
         if not self._ready:
             self._real_initialize()
             self._ready = True
 
     def extract(self, url):
-        '''Extracts URL information and returns it in list of dicts.'''
+        """Extracts URL information and returns it in list of dicts."""
         self.initialize()
         return self._real_extract(url)
 
     def set_downloader(self, downloader):
-        '''Sets the downloader for this IE.'''
+        """Sets the downloader for this IE."""
         self._downloader = downloader
 
     def to_stdout(self, message):
@@ -321,14 +331,14 @@ class InfoExtractor(object):
         sys.stderr.write('%s\n' % message)
 
     def _real_initialize(self):
-        '''Real initialization process. Redefine in subclasses.'''
+        """Real initialization process. Redefine in subclasses."""
         pass
     def _real_extract(self, url):
-        '''Real extraction process. Redefine in subclasses.'''
+        """Real extraction process. Redefine in subclasses."""
         pass
 
 class YoutubeIE(InfoExtractor):
-    '''Infomation extractor for youtube.com.'''
+    """Infomation extractor for youtube.com."""
 
     _LOGIN_URL = 'http://www.youtube.com/login?next=/'
     _AGE_URL = 'http://www.youtube.com/verify_age?next_url=/'
@@ -507,6 +517,8 @@ if __name__ == '__main__':
                     dest='format', metavar='FMT', help='video format code')
         parser.add_option('-b', '--best-quality',
                     action='store_const', dest='video_format', help='alias for -f 18', const='18')
+        parser.add_option('-i', '--ignore-errors',
+                    action='store_true', dest='ignoreerrors', help='continue on download errors', default=False)
         (opts, args) = parser.parse_args()
 
 
@@ -540,7 +552,8 @@ if __name__ == '__main__':
                         'outtmpl': ((opts.outtmpl is not None and opts.outtmpl)
                             or (opts.usetitle and '%(stitle)s-%(id)s.%(ext)s')
                             or (opts.useliteral and '%(title)s-%(id)s.%(ext)s')
-                            or '%(id)s.%(ext)s'),})
+                            or '%(id)s.%(ext)s'),
+                        'ignoreerrors': opts.ignoreerrors,})
         fd.add_info_extractor(youtube_ie)
         retcode = fd.download(args)
         sys.exit(retcode)
