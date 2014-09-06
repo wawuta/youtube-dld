@@ -22,7 +22,7 @@ std_headers = {
     'Accept-Language': 'en-us,en;q=0.5',
 }
 
-simple_title_chars = string.ascii_letters.decode('ascii')  string.digits.decode('ascii')
+simple_title_chars = string.ascii_letters.decode('ascii') +  string.digits.decode('ascii')
 
 class DownloadError(Exception):
     """Download Error exception.
@@ -438,7 +438,7 @@ class YoutubeIE(InfoExtractor):
             format_param = params.get('format', None)
 
         #Extension
-        video_extension = {'18': 'mp4'}.get(format_param, 'flv')
+        video_extension = {'18': 'mp4', '17': '3gp'}.get(format_param, 'flv')
 
         # Normalize URL, including format
         normalized_url = 'http://www.youtube.com/watch?v=%s' % video_id
@@ -541,6 +541,8 @@ if __name__ == '__main__':
                     dest='format', metavar='FMT', help='video format code')
         parser.add_option('-b', '--best-quality',
                     action='store_const', dest='video_format', help='alias for -f 18', const='18')
+        parser.add_option('-m', '--mobile-version',
+                    action='store_const', dest='video_format', help='alias for -f 17', const='17')
         parser.add_option('-i', '--ignore-errors',
                     action='store_true', dest='ignoreerrors', help='continue on download errors', default=False)
         (opts, args) = parser.parse_args()
