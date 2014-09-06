@@ -37,7 +37,7 @@ class FileDownloader(object):
     For this, file downloader objects have a method that allows
     InfoExtractors to be registered in a given order. When it is passed
     a URL, the file downloader handles it to the first InfoExtractor it
-    finds that reports it's able to handle it. The InfoExtractor returns
+    finds that reports being able to handle it. The InfoExtractor returns
     all the information to the FileDownloader and the latter downloads the
     file or does whatever it's instructed to do.
 
@@ -153,7 +153,12 @@ class FileDownloader(object):
                     continue
                 # Suitable InfoExtractor found
                 suitable_found = True
-                for result in ie.extract(url):
+                results = [x for x in ie.extract(url) if x is not None]
+
+                if (len(url_list) > 1 or len(results) > 1) and re.search(r'%\(.+?\)s', self._params['outtempl']) is None:
+                    sys.exit('ERROR: fixed output name but more than one file to download')
+
+                for result in results:
                     if result is None:
                         continue
                     try:
@@ -347,7 +352,7 @@ class YoutubeIE(InfoExtractor):
 
     def _real_extract(self, url):
         #Extract video id form URL
-        mobj = re.math(r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$', url)
+        mobj = re.match(r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$', url)
         if mobj is None:
             self.to_stderr('ERROR: Invalid URL: %s' % url)
             return [None]
