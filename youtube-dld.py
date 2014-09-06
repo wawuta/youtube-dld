@@ -149,6 +149,11 @@ class FileDownloader(object):
             sys.stdout.write('%s%s' % (message, ['\n', ''][skip_eol]))
             sys.stdout.flush()
 
+
+    def to_stderr(self, message):
+        '''Print message to stderr.'''
+        sys.stderr.write('%s\n' % message)
+
     def download(self, url_list):
         '''Download a given list of URLs.'''
         for url in url_list:
@@ -173,30 +178,30 @@ class FileDownloader(object):
                     try:
                         filename = self._params['outtmpl'] % result
                     except (KeyError), err:
-                        sys.stderr.write('ERROR: invalid output template: %s\n' % str(err))
+                        self.to_stderr('ERROR: invalid output template: %s' % str(err))
                         continue
                     try:
                         self.pmkdir(filename)
                     except (OSError, IOError), err:
-                        sys.stderr.write('ERROR: unable to create directories: %s\n' % str(err))
+                        self.to_stderr('ERROR: unable to create directories: %s\n' % str(err))
                         continue
                     try:
                         outstream = open(filename, 'wb')
                     except (OSError, IOError), err:
-                        sys.stderr.write('ERROR: unable to open for writing: %s\n' % str(err))
+                        self.to_stderr('ERROR: unable to open for writing: %s\n' % str(err))
                         continue
                     try:
                         self._do_download(outstream, result['url'])
                         outstream.close()
                     except (OSError, IOError), err:
-                        sys.stderr.write('ERROR: unable to write video data: %s\n' % str(err))
+                        self.to_stderr('ERROR: unable to write video data: %s\n' % str(err))
                         continue
                     except (urllib2.URLError, httplib.HTTPException, socket.error), err:
-                        sys.stderr.write('ERROR: unable to download video data: f%s\n' % str(err))
+                        self.to_stderr('ERROR: unable to download video data: f%s\n' % str(err))
                         continue
                 break
             if not suitable_found:
-                sys.stderr.write('ERROR: no suitable InfoExtractor: %s\n' % url)
+                self.to_stderr('ERROR: no suitable InfoExtractor: %s\n' % url)
 
     def _do_download(self, stream, url):
         request = urllib2.Request(url, None, std_headers)
