@@ -54,6 +54,7 @@ class FileDownloader(object):
     password:   Password for authentication purposes.
     usenetrc:   Use netrc for authentication instead.
     quiet:      Do not print messages to stdout.
+    simulate:   Do not download the video files
     format:     Video format code.
     outtmpl:    Template for output names.
 
@@ -161,6 +162,10 @@ class FileDownloader(object):
 
                 if (len(url_list) > 1 or len(results) > 1) and re.search(r'%\(.+?\)s', self._params['outtempl']) is None:
                     sys.exit('ERROR: fixed output name but more than one file to download')
+
+
+                if self._params.get('simulate', False):
+                    continue
 
                 for result in results:
                     if result is None:
@@ -438,6 +443,7 @@ if __name__ == '__main__':
                              'username':    'wawuta',
                              'password':    'qwerty112',
                              'quiet':       False,
+                             'simulate':    True,
                              'format':      None,
                              'outtmpl':     '%(id)s.%(ext)s'})
         fd.add_info_extractor(youtube_ie)
