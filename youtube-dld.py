@@ -177,7 +177,7 @@ class FileDownloader(object):
                         continue
                     try:
                         filename = self._params['outtmpl'] % result
-                    except (KeyError), err:
+                    except (ValueError, KeyError), err:
                         self.to_stderr('ERROR: invalid output template: %s' % str(err))
                         continue
                     try:
@@ -448,9 +448,9 @@ if __name__ == '__main__':
                              'username':    'wawuta',
                              'password':    'qwerty112',
                              'quiet':       False,
-                             'simulate':    True,
+                             'simulate':    False,
                              'format':      None,
-                             'outtmpl':     '%(id)s.%(ext)s'})
+                             'outtmpl':     '%(ext)s/%(ext)s/%(id)s.%(ext)s'})
         fd.add_info_extractor(youtube_ie)
         fd.download(['http://www.youtube.com/watch?v=IJyn3pRcy_Q',
                      'http://www.youtube.com/watch?v=DZRXe1wtC-M',])
