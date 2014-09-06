@@ -18,11 +18,28 @@ import urllib2
 std_headers = {
     'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9) Gecko/2008052906 Firefox/3.0',
     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-    'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
+    'Accept': 'text/xml,application/xml,application/xhtmlxml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
     'Accept-Language': 'en-us,en;q=0.5',
 }
 
-simple_title_chars = string.ascii_letters.decode('ascii') + string.digits.decode('ascii')
+simple_title_chars = string.ascii_letters.decode('ascii')  string.digits.decode('ascii')
+
+class DownloadError(Exception):
+    """Download Error exception.
+    
+    This exception may be thrown by FileDownloader objects if they are not
+    configured to continue on errors. They will contain the appropriate
+    error message.
+    """
+    pass
+
+class SameFileError(Exception):
+    """Same File exception.
+
+    This exception will be thrown by FileDownloader objects if they detect
+    multiple files would have to be downloaded to the same file on disk.
+    """
+    pass
 
 class FileDownloader(object):
     """ File Downloader class.
@@ -159,29 +176,29 @@ class FileDownloader(object):
 
     def fixed_template(self):
         """Checks if the output template is fixed."""
-        return (re.search(ur'(?u)%\(.+?\)s', self._params['outtmpl']) is None)
+        return (re.search(ur'(?u)%\(.?\)s', self._params['outtmpl']) is None)
 
 
     def trouble(self, message=None):
         """ Determine action to take when a download problem appears.
         
         Depending on if the downloader has been configured to ignore
-        download errors or not, this method may exit the program or
+        download errors or not, this method may throw an exception or
         not when errors are found, after printing the message. If it
-        doesn't exit, it returns an error code suitable to be returned
+        doesn't raise, it returns an error code suitable to be returned
         later as a program exit code to indicate error.
         """
         if message is not None:
             self.to_stderr(message)
         if not self._params.get('ignoreerrors', False):
-            sys.exit(1)
+            raise DownloadError(message)
         return 1
 
     def download(self, url_list):
         """Download a given list of URLs."""
         retcode = 0
         if len(url_list) > 1 and self.fixed_template():
-            sys.exit('ERROR: fixed output name but more than one file to download')
+            raise SameFileError(self._params['outtmpl'])
 
         for url in url_list:
             suitable_found = False
@@ -196,7 +213,7 @@ class FileDownloader(object):
                     retcode = self.trouble()
 
                 if len(results) > 1 and self.fixed_template():
-                    sys.exit('ERROR: fixed output name but more than one file to download')
+                    raise SameFileError(self._params['outtmpl'])
 
                 for result in results:
 
@@ -264,7 +281,7 @@ class FileDownloader(object):
             data_block_len = len(data_block)
             if data_block_len == 0:
                 break
-            byte_counter += data_block_len
+            byte_counter = data_block_len
             stream.write(data_block)
             block_size = self.best_block_size(after - before, data_block_len)
 
@@ -402,11 +419,12 @@ class YoutubeIE(InfoExtractor):
             self.to_stdout('[youtube] Confirming age')
             age_results = urllib2.urlopen(request).read()
         except (urllib2.URLError, httplib.HTTPException, socket.error), err:
-            sys.exit('ERROR: unable to confirm age: %s' % str(err))
+            self.to_stderr('ERROR: unable to confirm age: %s' % str(err))
+            return
 
     def _real_extract(self, url):
         #Extract video id form URL
-        mobj = re.match(r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$', url)
+        mobj = re.match(r'^((?:http://)?(?:\w\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.&)?v=)))?([0-9A-Za-z_-])(?(1).)?$', url)
         if mobj is None:
             self.to_stderr('ERROR: invalid URL: %s' % url)
             return [None]
@@ -430,11 +448,12 @@ class YoutubeIE(InfoExtractor):
             self.to_stdout('[youtube] %s: Downloading video webpage' % video_id)
             video_webpage = urllib2.urlopen(request).read()
         except (urllib2.URLError, httplib.HTTPException, socket.error), err:
-            sys.exit('ERROR: unable to download video: %s' % str(err))
+            self.to_stderr('ERROR: unable to download video webpage: %s' % str(err))
+            return [None]
         self.to_stdout('[youtube] %s: Extracting video information' % video_id)
 
         # "t" param
-        mobj = re.search(r', "t": "([^"]+)"', video_webpage)
+        mobj = re.search(r', "t": "([^"])"', video_webpage)
         if mobj is None:
             self.to_stderr('ERROR: unable to extract "t" parameter')
             return [None]
@@ -456,11 +475,11 @@ class YoutubeIE(InfoExtractor):
             self.to_stderr('ERROR: unable to extract video title')
             return [None]
         video_title = mobj.group(1).decode('utf-8')
-        video_title = re.sub(ur'(?u)&(.+?);', lambda x: unichr(htmlentitydefs.name2codepoint[x.group(1)]), video_title)
+        video_title = re.sub(ur'(?u)&(.?);', lambda x: unichr(htmlentitydefs.name2codepoint[x.group(1)]), video_title)
         video_title = video_title.replace(os.sep, u'%')
 
         #simplified title
-        simple_title = re.sub(ur'(?u)([^%s]+)' % simple_title_chars, u'_', video_title)
+        simple_title = re.sub(ur'(?u)([^%s])' % simple_title_chars, u'_', video_title)
         simple_title = simple_title.strip(ur'_')
 
         # Return information
@@ -561,7 +580,10 @@ if __name__ == '__main__':
         fd.add_info_extractor(youtube_ie)
         retcode = fd.download(args)
         sys.exit(retcode)
-
+    except DownloadError:
+        sys.exit(1)
+    except SameFileError:
+        sys.exit('ERROR: fixed output name but more than one file to download')
     except KeyboardInterrupt:
         sys.exit('\nERROR: Interrupted by user')
 
