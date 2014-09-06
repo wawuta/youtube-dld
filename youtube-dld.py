@@ -529,8 +529,6 @@ if __name__ == '__main__':
                             or (opts.useliteral and '%(title)s-%(id)s.%(ext)s')
                             or '%(id)s.%(ext)s'),})
         fd.add_info_extractor(youtube_ie)
-        #fd.download(['http://www.youtube.com/watch?v=IJyn3pRcy_Q',
-        #             'http://www.youtube.com/watch?v=DZRXe1wtC-M',])
         fd.download(args)
 
     except KeyboardInterrupt:
