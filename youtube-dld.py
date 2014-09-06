@@ -84,8 +84,6 @@ class FileDownloader(object):
         else:
             exponent = long(math.log(float(bytes), 1024.0))
         suffix = 'bkMGTPEZY'[exponent]
-        if exponent == 0:
-            return '%s%s' % (bytes, suffix)
         converted = float(bytes) / float(1024**exponent)
         return '%.2f%s' % (converted, suffix)
 
@@ -113,7 +111,7 @@ class FileDownloader(object):
     def calc_speed(start, now, bytes):
         dif = now - start
         if bytes == 0 or dif < 0.001:
-            return '%9s' % 'N/A b/s'
+            return '%10s' % '---b/s'
         return '%10s' % ( '%s/s' % FileDownloader.format_bytes(float(bytes) / dif))
 
     @staticmethod
@@ -143,6 +141,12 @@ class FileDownloader(object):
         '''Add an infoExtractor object to the end of the list.'''
         self._ies.append(ie)
         ie.set_downloader(self)
+
+    def to_stdout(self, message, skip_eol=False):
+        '''Print message to stdout if not in quiet mode.'''
+        if not self._params.get('quiet', False):
+            sys.stdout.write('%s%s' % (message, ['\n', ''][skip_eol]))
+            sys.stdout.flush()
 
     def download(self, url_list):
         '''Download a given list of URLs.'''
@@ -202,10 +206,9 @@ class FileDownloader(object):
             eta_str = self.calc_eta(start, time.time(), data_len, byte_counter)
             speed_str = self.calc_speed(start, time.time(), byte_counter)
 
-            if not self._params.get('quiet', False):
-                sys.stdout.write('\r[download] %s of %s at %s ETA %s' %
-                                (percent_str, data_len_str, speed_str, eta_str))
-                sys.stdout.flush()
+            self.to_stdout('\r[download] %s of %s at %s ETA %s' %
+                (percent_str, data_len_str, speed_str, eta_str), skip_eol=True)
+
 
             before = time.time()
             data_block = data.read(block_size)
@@ -217,9 +220,7 @@ class FileDownloader(object):
             stream.write(data_block)
             block_size = self.best_block_size(after - before, data_block_len)
 
-        if not self._params.get('quite', False):
-            print
-
+        self.to_stdout('')
         if data_len is not None and str(byte_counter) != data_len:
             raise ValueError('Content too short: %s/%s bytes' % (byte_counter, data_len))
 
@@ -341,8 +342,10 @@ class YoutubeIE(InfoExtractor):
             return
 
         # confirm age
-        age_form = {'next_url':         '/',
-                    'action_confirm':   'confirm',}
+        age_form = {
+            'next_url':         '/',
+            'action_confirm':   'confirm',
+            }
         request = urllib2.Request(self._AGE_URL, urllib.urlencode(age_form), std_headers)
         try:
             self.to_stdout('[youtube] Confirming age')
@@ -387,6 +390,7 @@ class YoutubeIE(InfoExtractor):
         video_real_url = 'http://www.youtube.com/get_video?video_id=%s&t=%s' %(video_id, mobj.group(1))
         if format_param is not None:
             video_real_url = '%s&fmt=%s' % (video_real_url, format_param)
+        self.to_stdout('[youtube] %s: URL: %s' % (video_id, video_real_url))
 
         # uploader
         mobj = re.search(r'More From: ([^<]*)<', video_webpage)
@@ -408,12 +412,14 @@ class YoutubeIE(InfoExtractor):
         simple_title = simple_title.strip(u'_')
 
         # Return information
-        return [{ 'id':         video_id,
-                  'url':        video_real_url,
-                  'uploader':   video_uploader,
-                  'title':      video_title,
-                  'stitle':     simple_title,
-                  'ext':        video_extension,}]
+        return [{
+                    'id':         video_id,
+                    'url':        video_real_url,
+                    'uploader':   video_uploader,
+                    'title':      video_title,
+                    'stitle':     simple_title,
+                    'ext':        video_extension,
+                    }]
 
 if __name__ == '__main__':
     try:
