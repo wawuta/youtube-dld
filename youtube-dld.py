@@ -371,6 +371,7 @@ class YoutubeIE(InfoExtractor):
                 self.to_stderr('WARNING: parsing .netrc: %s' % str(err))
                 return
 
+        # No authentication to be performed
         if username is None:
             return
 
