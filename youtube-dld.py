@@ -66,6 +66,7 @@ class FileDownloader(object):
     _ies = []
 
     def __init__(self, params):
+        """Create a FileDownloader object with the given options."""
         self._ies = []
         self.set_params(params)
 
@@ -309,7 +310,7 @@ class InfoExtractor(object):
         return True
 
     def initialize(self):
-        """Initializes an instance (login, etc)."""
+        """Initializes an instance (authentication, etc)."""
         if not self._ready:
             self._real_initialize()
             self._ready = True
@@ -324,10 +325,12 @@ class InfoExtractor(object):
         self._downloader = downloader
 
     def to_stdout(self, message):
+        """Print message to stdout if downloader is not in quiet mode."""
         if self._downloader is None or not self._downloader.get_params().get('quiet', False):
             print message
 
     def to_stderr(self, message):
+        """Print message to stderr."""
         sys.stderr.write('%s\n' % message)
 
     def _real_initialize(self):
