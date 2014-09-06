@@ -394,7 +394,7 @@ class YoutubeIE(InfoExtractor):
             format_param = params.get('format', None)
 
         #Extension
-        video_extension = {18: 'mp4'}.get(format_param, 'flv')
+        video_extension = {'18': 'mp4'}.get(format_param, 'flv')
 
         # Normalize URL, including format
         normalized_url = 'http://www.youtube.com/watch?v=%s' % video_id
@@ -451,10 +451,17 @@ if __name__ == '__main__':
     try:
         http_proxy = 'http://127.0.0.1:48102'
         https_proxy = 'https://127.0.0.1:48102'
+
+        #Modules needed only when running the main program
+        import optparse
+
         #General configureation
         urllib2.install_opener(urllib2.build_opener(urllib2.ProxyHandler({'http':   http_proxy,
                                                                           'https':  https_proxy,})))
         #urllib2.install_opener(urllib2.build_opener(urllib2.HTTPCookieProcessor()))
+        socket.setdefaulttimeout(300) #5 minutes should be enough (famous last words)
+
+        #Parse command line
 
         #information extractors
         youtube_ie = YoutubeIE()
@@ -463,12 +470,12 @@ if __name__ == '__main__':
         fd = FileDownloader({'usenetrc':    False,
                              'username':    'wawuta',
                              'password':    'qwerty112',
-                             'quiet':       False,
-                             'forceurl':    False,
-                             'forcetitle':  False,
-                             'simulate':    False,
+                             'quiet':       True,
+                             'forceurl':    True,
+                             'forcetitle':  True,
+                             'simulate':    True,
                              'format':      None,
-                             'outtmpl':     '%(ext)s/%(ext)s/%(id)s.%(ext)s'})
+                             'outtmpl':     '%(id)s.%(ext)s'})
         fd.add_info_extractor(youtube_ie)
         fd.download(['http://www.youtube.com/watch?v=IJyn3pRcy_Q',
                      'http://www.youtube.com/watch?v=DZRXe1wtC-M',])
