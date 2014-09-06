@@ -54,6 +54,8 @@ class FileDownloader(object):
     password:   Password for authentication purposes.
     usenetrc:   Use netrc for authentication instead.
     quiet:      Do not print messages to stdout.
+    forceurl:   Force printing final URL.
+    forcetitle: Force printing title.
     simulate:   Do not download the video files
     format:     Video format code.
     outtmpl:    Template for output names.
@@ -175,11 +177,18 @@ class FileDownloader(object):
                 if len(results) > 1 and self.fixed_template():
                     sys.exit('ERROR: fixed output name but more than one file to download')
 
-
-                if self._params.get('simulate', False):
-                    continue
-
                 for result in results:
+
+                    #Force printings
+                    if self._params.get('forcetitle', False):
+                        print result['title']
+                    if self._params.get('forceurl', False):
+                        print result['url']
+
+                    #Do nothing else if in simulate mode
+                    if self._params.get('simulate', False):
+                        continue
+
                     if result is None:
                         continue
                     try:
@@ -455,6 +464,8 @@ if __name__ == '__main__':
                              'username':    'wawuta',
                              'password':    'qwerty112',
                              'quiet':       False,
+                             'forceurl':    False,
+                             'forcetitle':  False,
                              'simulate':    False,
                              'format':      None,
                              'outtmpl':     '%(ext)s/%(ext)s/%(id)s.%(ext)s'})
