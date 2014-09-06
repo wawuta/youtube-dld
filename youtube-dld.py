@@ -231,6 +231,7 @@ class FileDownloader(object):
                         continue
                     try:
                         filename = self._params['outtmpl'] % result
+                        self.to_stdout('[download] Destination: %s' % filename)
                     except (ValueError, KeyError), err:
                         retcode = self.trouble('ERROR: invalid output template: %s' % str(err))
                         continue
