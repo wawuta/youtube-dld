@@ -754,9 +754,10 @@ class YoutubePlaylistIE(InfoExtractor):
                 self.to_stderr(u'ERROR: unable to download webpage: %s' % str(err))
                 return [None]
             #Extract video identifiers
-            ids_in_page = set()
+            ids_in_page = []
             for mobj in re.finditer(self._VIDEO_INDICATOR, page):
-                ids_in_page.add(mobj.group(1))
+                if mobj.group(1) not in ids_in_page:
+                    ids_in_page.add(mobj.group(1))
             video_ids.extend(list(ids_in_page))
 
             if (self._MORE_PAGES_INDICATOR % (playlist_id, pagenum + 1)) not in page:
@@ -908,6 +909,9 @@ if __name__ == '__main__':
         youtube_pl_ie = YoutubePlaylistIE(youtube_ie)
 
         #File downloader
+        charset = locale.getfaultlocale()[1]
+        if charset is None:
+            charset = 'ascii'
         fd = FileDownloader({
                         'usenetrc': opts.usenetrc,
                         'username': opts.username,
@@ -917,7 +921,7 @@ if __name__ == '__main__':
                         'forcetitle': opts.gettitle,
                         'simulate': opts.simulate,
                         'format': opts.format,
-                        'outtmpl': ((opts.outtmpl is not None and opts.outtmpl.decode(locale.getdefaultlocale()[1]))
+                        'outtmpl': ((opts.outtmpl is not None and opts.outtmpl.decode(charset)
                             or (opts.usetitle and u'%(stitle)s-%(id)s.%(ext)s')
                             or (opts.useliteral and u'%(title)s-%(id)s.%(ext)s')
                             or u'%(id)s.%(ext)s'),
