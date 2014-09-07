@@ -844,7 +844,7 @@ if __name__ == '__main__':
         #Parse command line
         parser = optparse.OptionParser(
             usage='Usage: %prog [options] url...',
-            version='2008.08.09',
+            version='2008.10.16',
             conflict_handler='resolve',)
         parser.add_option('-h', '--help',
             action='help', help='print this help text and exit')
