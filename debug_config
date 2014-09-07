@@ -1,0 +1,5 @@
+youtube:
+-u wawuta -p qwerty112 -t -g -e -i http://www.youtube.com/watch?v=IJyn3pRcy_Q
+
+metacafe:
+-t -g -e -i http://www.metacafe.com/watch/11362746/honest_trailer_the_amazing_spider_man_2/
