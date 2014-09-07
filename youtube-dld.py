@@ -17,7 +17,7 @@ import urllib
 import urllib2
 
 std_headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9) Gecko/2008052906 Firefox/3.0',
+    'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.5) Gecko/2008120122 Firefox/3.0.5',
     'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
     'Accept': 'text/xml,application/xml,application/xhtmlxml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
     'Accept-Language': 'en-us,en;q=0.5',
@@ -859,7 +859,7 @@ if __name__ == '__main__':
         #Parse command line
         parser = optparse.OptionParser(
             usage='Usage: %prog [options] url...',
-            version='2008.11.01',
+            version='2009.01.31',
             conflict_handler='resolve',)
         parser.add_option('-h', '--help',
             action='help', help='print this help text and exit')
@@ -895,11 +895,12 @@ if __name__ == '__main__':
                     action='store_true', dest='ignoreerrors', help='continue on download errors', default=False)
         parser.add_option('-r', '--rate-limit',
                 dest='ratelimit', metavar='L', help='download rate limit (e.g. 50k or 44.6m)')
-        parse.add_option('-a', '--batch-fle',
+        parser.add_option('-a', '--batch-fle',
                 dest='batchfile', metavar='F', help='file containing URLs to download')
         (opts, args) = parser.parse_args()
 
         # Batch file verification
+        batchurls = []
         if opts.batchfile is not None:
             try:
                 batchurls = [line.strp() for line in open(opts.batchfile,'r')]
