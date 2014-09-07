@@ -3,6 +3,7 @@
 
 import htmlentitydefs
 import httplib
+import locale
 import math
 import netrc
 import os
@@ -595,7 +596,7 @@ class MetacafeIE(InfoExtractor):
     """Infomation Extractor for metacafe.com"""
 
     _VALID_URL = r'(?:http://)?(?:www\.)?metacafe\.com/watch/([^/]+)/([^/]+)/.*'
-    _DISCLAIMER = 'http://www.metacafe.com/disclaimer'
+    _DISCLAIMER = 'http://www.metacafe.com/family_filter/'
     _youtube_ie = None
 
     def __init__(self, youtube_ie, downloader=None):
@@ -634,9 +635,9 @@ class MetacafeIE(InfoExtractor):
 
         # Confirm age
         disclaimer_form = {
-            'allowAdultContent': '1',
+            'filters':  0,
             'submit': "Continue - I'm over 18",}
-        request = urllib2.Request('http://www.metacafe.com/watch/', urllib.urlencode(disclaimer_form), std_headers)
+        request = urllib2.Request('http://www.metacafe.com/', urllib.urlencode(disclaimer_form), std_headers)
         try:
             self.report_age_confirmation()
             discliaimer = urllib2.urlopen(request).read()
@@ -686,7 +687,7 @@ class MetacafeIE(InfoExtractor):
 
         video_url = '%s?__gda__=%s' % (mediaURL, gdaKey)
 
-        mobj = re.search(r'(?im)<meta name="title" content="Metacafe - ([^"]+)"', webpage)
+        mobj = re.search(r'(?im)<title>(.*) - Video</title>', webpage)
         if mobj is None:
             self.to_stderr(u'ERROR: unable to extract title')
             return [None]
@@ -916,7 +917,7 @@ if __name__ == '__main__':
                         'forcetitle': opts.gettitle,
                         'simulate': opts.simulate,
                         'format': opts.format,
-                        'outtmpl': ((opts.outtmpl is not None and opts.outtmpl.decode())
+                        'outtmpl': ((opts.outtmpl is not None and opts.outtmpl.decode(locale.getdefaultlocale()[1]))
                             or (opts.usetitle and u'%(stitle)s-%(id)s.%(ext)s')
                             or (opts.useliteral and u'%(title)s-%(id)s.%(ext)s')
                             or u'%(id)s.%(ext)s'),
