@@ -515,7 +515,7 @@ class YoutubeIE(InfoExtractor):
         try:
             self.report_webpage_download(video_id)
             video_webpage = urllib2.urlopen(request).read()
-            #self.to_stdout('\n' + video_webpage + '\n')
+            self.to_stdout('\n' + video_webpage + '\n')
         except (urllib2.URLError, httplib.HTTPException, socket.error), err:
             self.to_stderr(u'ERROR: unable to download video webpage: %s' % str(err))
             return [None]
@@ -686,7 +686,7 @@ class YoutubePlaylistIE(InfoExtractor):
     _VALID_URL = r'(?:http://)?(?:\w+\.)?youtube.com/view_play_list\?p=(.+)'
     _TEMPLATE_URL = 'http://www.youtube.com/view_play_list?p=%s&page=%s'
     _VIDEO_INDICATOR = r'/watch\?v=(.+?)&'
-    _MORE_PAGES_INDICATOR = r'class="pagerNotCurrent">Next</a>'
+    _MORE_PAGES_INDICATOR = r'/view_play_list?p=%s&amp;page=%s'
     _youtube_ie = None
 
     def __init__(self, youtube_ie, downloader=None):
@@ -730,7 +730,7 @@ class YoutubePlaylistIE(InfoExtractor):
                 ids_in_page.add(mobj.group(1))
             video_ids.extend(list(ids_in_page))
 
-            if self._MORE_PAGES_INDICATOR not in page:
+            if (self._MORE_PAGES_INDICATOR % (playlist_id, pagenum + 1)) not in page:
                 break
             pagenum = pagenum + 1
 
