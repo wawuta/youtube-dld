@@ -430,13 +430,18 @@ class YoutubeIE(InfoExtractor):
     """Infomation extractor for youtube.com."""
 
     _VALID_URL = r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$'
-    _LOGIN_URL = 'http://www.youtube.com/login?next=/'
-    _AGE_URL = 'http://www.youtube.com/verify_age?next_url=/'
+    _LANG_URL = r'http://www.youtube.com/?hl=en&persist_hl=1&gl=US&persist_gl=1&opt_out_ackd=1'
+    _LOGIN_URL = 'http://www.youtube.com/signup?next=/&gl=US&hl=en'
+    _AGE_URL = 'http://www.youtube.com/verify_age?next_url=/&gl=US&hl=en'
     _METRC_MACHINE = 'youtube'
 
     @staticmethod
     def suitable(url):
         return (re.match(YoutubeIE._VALID_URL, url) is not None)
+
+    def report_lang(self):
+        """Report attempt to set language."""
+        self.to_stdout(u'[youtube] Setting language')
 
     def report_login(self):
         """Report attempt to log in."""
@@ -484,6 +489,15 @@ class YoutubeIE(InfoExtractor):
 
         # No authentication to be performed
         if username is None:
+            return
+
+        # Set language
+        request = urllib2.Request(self._LOGIN_URL, None, std_headers)
+        try:
+            self.report_lang()
+            urllib2.urlopen(request).read()
+        except (urllib2.URLError, httplib.HTTPException, socket.error), err:
+            self.to_stderr(u'WARNING: unable to set language: %s' % str(err))
             return
 
         #log in
@@ -535,7 +549,7 @@ class YoutubeIE(InfoExtractor):
         video_extension = {'18': 'mp4', '17': '3gp'}.get(format_param, 'flv')
 
         # Normalize URL, including format
-        normalized_url = 'http://www.youtube.com/watch?v=%s' % video_id
+        normalized_url = 'http://www.youtube.com/watch?v=%s&gl=US&hl=en' % video_id
         if format_param is not None:
             normalized_url = '%s&fmt=%s' % (normalized_url, format_param)
 
@@ -713,7 +727,7 @@ class YoutubePlaylistIE(InfoExtractor):
     """Information Extractor for YouTube playlists."""
 
     _VALID_URL = r'(?:http://)?(?:\w+\.)?youtube.com/view_play_list\?p=(.+)'
-    _TEMPLATE_URL = 'http://www.youtube.com/view_play_list?p=%s&page=%s'
+    _TEMPLATE_URL = 'http://www.youtube.com/view_play_list?p=%s&page=%s&gl=US&hl=en'
     _VIDEO_INDICATOR = r'/watch\?v=(.+?)&'
     _MORE_PAGES_INDICATOR = r'/view_play_list?p=%s&amp;page=%s'
     _youtube_ie = None
@@ -845,7 +859,7 @@ if __name__ == '__main__':
         #Parse command line
         parser = optparse.OptionParser(
             usage='Usage: %prog [options] url...',
-            version='2008.10.16',
+            version='2008.11.01',
             conflict_handler='resolve',)
         parser.add_option('-h', '--help',
             action='help', help='print this help text and exit')
