@@ -386,7 +386,8 @@ class InfoExtractor(object):
     def to_stdout(self, message):
         """Print message to stdout if downloader is not in quiet mode."""
         if self._downloader is None or not self._downloader.get_params().get('quiet', False):
-            print message
+            sys.stdout.write(message + '\n')
+            sys.stdout.flush()
 
     def to_stderr(self, message):
         """Print message to stderr."""
@@ -486,7 +487,8 @@ class YoutubeIE(InfoExtractor):
 
     def _real_extract(self, url):
         #Extract video id form URL
-        mobj = re.match(r'^((?:http://)?(?:\w\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.&)?v=)))?([0-9A-Za-z_-])(?(1).)?$', url)
+        mobj = re.match(r'^((?:http://)?(?:\w+\.)?youtube\.com/(?:(?:v/)|(?:(?:watch(?:\.php)?)?\?(?:.+&)?v=)))?([0-9A-Za-z_-]+)(?(1).+)?$', url)
+
         if mobj is None:
             self.to_stderr('ERROR: invalid URL: %s' % url)
             return [None]
@@ -505,17 +507,20 @@ class YoutubeIE(InfoExtractor):
         normalized_url = 'http://www.youtube.com/watch?v=%s' % video_id
         if format_param is not None:
             normalized_url = '%s&fmt=%s' % (normalized_url, format_param)
+
+        self.to_stdout('request_url: %s' % normalized_url);
         request = urllib2.Request(normalized_url, None, std_headers)
         try:
             self.report_webpage_download(video_id)
             video_webpage = urllib2.urlopen(request).read()
+            #self.to_stdout('\n' + video_webpage + '\n')
         except (urllib2.URLError, httplib.HTTPException, socket.error), err:
             self.to_stderr('ERROR: unable to download video webpage: %s' % str(err))
             return [None]
         self.report_information_extraction(video_id)
 
         # "t" param
-        mobj = re.search(r', "t": "([^"])"', video_webpage)
+        mobj = re.search(r', "t": "([^"]+)"', video_webpage)
         if mobj is None:
             self.to_stderr('ERROR: unable to extract "t" parameter')
             return [None]
@@ -525,14 +530,16 @@ class YoutubeIE(InfoExtractor):
         self.report_video_url(video_id, video_real_url)
 
         # uploader
-        mobj = re.search(r'More From: ([^<]*)<', video_webpage)
+        #mobj = re.search(r'More From: ([^<]*)<', video_webpage)
+        mobj = re.search(r'<div class="yt-user-info"><a.+>(.+)</a>', video_webpage)
         if mobj is None:
             self.to_stderr('ERROR: unable to extract uploader nickname')
             return [None]
         video_uploader = mobj.group(1)
 
         # title
-        mobj = re.search(r'(?im)<title>YouTube - ([^<]*)</title>', video_webpage)
+        #mobj = re.search(r'(?im)<title>YouTube - ([^<]*)</title>', video_webpage)
+        mobj = re.search(r'<meta property="og:title" content="(.+)">', video_webpage)
         if mobj is None:
             self.to_stderr('ERROR: unable to extract video title')
             return [None]
@@ -638,10 +645,10 @@ if __name__ == '__main__':
                         'usenetrc': opts.usenetrc,
                         'username': opts.username,
                         'password': opts.password,
-                        'quiet': (opts.quiet or opts.geturl or opts.gettitle),
+                        'quiet': opts.quiet,
                         'forceurl': opts.geturl,
                         'forcetitle': opts.gettitle,
-                        'simulate': (opts.simulate or opts.geturl or opts.gettitle),
+                        'simulate': opts.simulate,
                         'format': opts.format,
                         'outtmpl': ((opts.outtmpl is not None and opts.outtmpl)
                             or (opts.usetitle and '%(stitle)s-%(id)s.%(ext)s')
