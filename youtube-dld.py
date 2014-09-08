@@ -315,8 +315,10 @@ class FileDownloader(object):
                     # Do not overwrite an error code with a success code
                     if result != 0:
                         retcode = result
+
                 # Suitable InfoExtractor had been found; go to next URL
                 break
+
             if not suitable_found:
                 retcode = self.trouble('ERROR: no suitable InfoExtractor: %s\n' % url)
         return retcode
@@ -574,6 +576,8 @@ class YoutubeIE(InfoExtractor):
         if self._downloader is not None:
             params = self._downloader.params
             format_param = params.get('format', None)
+        if format_param is None:
+            format_param = '34'
 
         #Extension
         video_extension = {
@@ -603,7 +607,7 @@ class YoutubeIE(InfoExtractor):
         if mobj is None:
             self.to_stderr(u'ERROR: unable to extract "t" parameter')
             return [None]
-        video_real_url = 'http://www.youtube.com/get_video?video_id=%s&t=%s' %(video_id, mobj.group(1))
+        video_real_url = 'http://www.youtube.com/get_video?video_id=%s&t=%s&el=detailpage&ps=' %(video_id, mobj.group(1))
         if format_param is not None:
             video_real_url = '%s&fmt=%s' % (video_real_url, format_param)
         self.report_video_url(video_id, video_real_url)
