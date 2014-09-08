@@ -319,7 +319,7 @@ class FileDownloader(object):
             if info is None:
                 break
 
-def _do_download(self, stream, url):
+    def _do_download(self, stream, url):
         request = urllib2.Request(url, None, std_headers)
         data = urllib2.urlopen(request)
         data_len = data.info().get('Content-length', None)
@@ -434,6 +434,29 @@ class YoutubeIE(InfoExtractor):
     def suitable(url):
         return (re.match(YoutubeIE._VALID_URL, url) is not None)
 
+    @staticmethod
+    def htmlentity_transform(matchobj):
+        """Transforms an HTML entity to a Unicode character"""
+        entity = matchobj.group(1)
+
+        # Known non-numeric HTML entity
+        if entity in htmlentitydefs.name2codepoint:
+            return unichr(htmlentitydefs.name2codepoint[entity])
+
+         # Unicode character
+        mobj = re.match(ur'(?u)#(x?\d+)', entity)
+        if mobj is not None:
+            numstr = mobj.group(1)
+            if numstr.startswith(u'x'):
+                base = 16
+                numstr = u'0%s' % numstr
+            else:
+                base = 10
+            return unichr(long(numstr, base))
+
+        # Unknown entity in name, return its literal representation
+        return (u'&%s;' % entity)
+
     def report_lang(self):
         """Report attempt to set language."""
         self.to_stdout(u'[youtube] Setting language')
@@ -464,7 +487,7 @@ class YoutubeIE(InfoExtractor):
 
         username = None
         password = None
-        downloaderparams = self._downloader.params
+        downloader_params = self._downloader.params
 
         # Attempt to use provided username and password or .netrc data
         if downloader_params.get('username', None) is not None:
@@ -575,7 +598,6 @@ class YoutubeIE(InfoExtractor):
         self.report_video_url(video_id, video_real_url)
 
         # uploader
-        #mobj = re.search(r'More From: ([^<]*)<', video_webpage)
         mobj = re.search(r'<div class="yt-user-info"><a.+>(.+)</a>', video_webpage)
         if mobj is None:
             self.to_stderr(u'ERROR: unable to extract uploader nickname')
@@ -589,7 +611,7 @@ class YoutubeIE(InfoExtractor):
             self.to_stderr(u'ERROR: unable to extract video title')
             return [None]
         video_title = mobj.group(1).decode('utf-8')
-        video_title = re.sub(ur'(?u)&(.?);', lambda x: unichr(htmlentitydefs.name2codepoint[x.group(1)]), video_title)
+        video_title = re.sub(ur'(?u)&(.?);', self.htmlentity_transform, video_title)
         video_title = video_title.replace(os.sep, u'%')
 
         #simplified title
@@ -943,7 +965,7 @@ if __name__ == '__main__':
         #Parse command line
         parser = optparse.OptionParser(
             usage='Usage: %prog [options] url...',
-            version='2009.03.03',
+            version='2009.03.28',
             conflict_handler='resolve',)
         parser.add_option('-h', '--help',
             action='help', help='print this help text and exit')
