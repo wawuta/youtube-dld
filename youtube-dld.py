@@ -17,82 +17,83 @@ import time
 import urllib
 import urllib2
 
-std_headers = {	
-	'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.5) Gecko/2008120122 Firefox/3.0.5',
-	'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-	'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
-	'Accept-Language': 'en-us,en;q=0.5',
+std_headers = {    
+    'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.5) Gecko/2008120122 Firefox/3.0.5',
+    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+    'Accept': 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
+    'Accept-Language': 'en-us,en;q=0.5',
 }
 
 simple_title_chars = string.ascii_letters.decode('ascii') +  string.digits.decode('ascii')
 
 class DownloadError(Exception):
-	"""Download Error exception.
-	
-	This exception may be thrown by FileDownloader objects if they are not
-	configured to continue on errors. They will contain the appropriate
-	error message.
-	"""
-	pass
+    """Download Error exception.
+    
+    This exception may be thrown by FileDownloader objects if they are not
+    configured to continue on errors. They will contain the appropriate
+    error message.
+    """
+    pass
 
 class SameFileError(Exception):
-	"""Same File exception.
+    """Same File exception.
 
-	This exception will be thrown by FileDownloader objects if they detect
-	multiple files would have to be downloaded to the same file on disk.
-	"""
-	pass
+    This exception will be thrown by FileDownloader objects if they detect
+    multiple files would have to be downloaded to the same file on disk.
+    """
+    pass
 
 class PostProcessingError(Exception):
-	"""Post Processing exception.
+    """Post Processing exception.
 
-	This exception may be raised by PostProcessor's .run() method to
-	indicate an error in the postprocessing task.
-	"""
-	pass
+    This exception may be raised by PostProcessor's .run() method to
+    indicate an error in the postprocessing task.
+    """
+    pass
 
 class FileDownloader(object):
-	"""File Downloader class.
+    """File Downloader class.
 
-	File downloader objects are the ones responsible of downloading the
-	actual video file and writing it to disk if the user has requested
-	it, among some other tasks. In most cases there should be one per
-	program. As, given a video URL, the downloader doesn't know how to
-	extract all the needed information, task that InfoExtractors do, it
-	has to pass the URL to one of them.
+    File downloader objects are the ones responsible of downloading the
+    actual video file and writing it to disk if the user has requested
+    it, among some other tasks. In most cases there should be one per
+    program. As, given a video URL, the downloader doesn't know how to
+    extract all the needed information, task that InfoExtractors do, it
+    has to pass the URL to one of them.
 
-	For this, file downloader objects have a method that allows
-	InfoExtractors to be registered in a given order. When it is passed
-	a URL, the file downloader handles it to the first InfoExtractor it
-	finds that reports being able to handle it. The InfoExtractor returns
-	all the information to the FileDownloader and the latter downloads the
-	file or does whatever it's instructed to do.
+    For this, file downloader objects have a method that allows
+    InfoExtractors to be registered in a given order. When it is passed
+    a URL, the file downloader handles it to the first InfoExtractor it
+    finds that reports being able to handle it. The InfoExtractor returns
+    all the information to the FileDownloader and the latter downloads the
+    file or does whatever it's instructed to do.
 
-	File downloaders accept a lot of parameters. In order not to saturate
-	the object constructor with arguments, it receives a dictionary of
-	options instead. These options are available through the get_params()
-	method for the InfoExtractors to use. The FileDownloader also registers
-	itself as the downloader in charge for the InfoExtractors that are
-	added to it, so this is a "mutual registration".
+    File downloaders accept a lot of parameters. In order not to saturate
+    the object constructor with arguments, it receives a dictionary of
+    options instead. These options are available through the get_params()
+    method for the InfoExtractors to use. The FileDownloader also registers
+    itself as the downloader in charge for the InfoExtractors that are
+    added to it, so this is a "mutual registration".
 
-	Available options:
+    Available options:
 
-	username:	Username for authentication purposes.
-	password:	Password for authentication purposes.
-	usenetrc:	Use netrc for authentication instead.
-	quiet:		Do not print messages to stdout.
-	forceurl:	Force printing final URL.
-	forcetitle:	Force printing title.
-	simulate:	Do not download the video files.
-	format:		Video format code.
-	outtmpl:	Template for output names.
-	ignoreerrors:	Do not stop on download errors.
-	ratelimit:	Download speed limit, in bytes/sec.
-	"""
+    username:    Username for authentication purposes.
+    password:    Password for authentication purposes.
+    usenetrc:    Use netrc for authentication instead.
+    quiet:        Do not print messages to stdout.
+    forceurl:    Force printing final URL.
+    forcetitle:    Force printing title.
+    simulate:    Do not download the video files.
+    format:        Video format code.
+    outtmpl:    Template for output names.
+    ignoreerrors:    Do not stop on download errors.
+    ratelimit:    Download speed limit, in bytes/sec.
+    nooverwrites:   Prevent overwriting files.
+    """
 
-	_params = None
-	_ies = []
-	_pps = []
+    _params = None
+    _ies = []
+    _pps = []
 
     def __init__(self, params):
         """Create a FileDownloader object with the given options."""
@@ -286,6 +287,9 @@ class FileDownloader(object):
                         self.report_destination(filename)
                     except (ValueError, KeyError), err:
                         retcode = self.trouble('ERROR: invalid output template or system charset: %s' % str(err))
+                        continue
+                    if self._params['nooverwrites'] and os.path.exists(filename):
+                        self.to_stderr('WARNING:file exists: %s; skipping' % filename)
                         continue
                     try:
                         self.pmkdir(filename)
@@ -982,6 +986,8 @@ if __name__ == '__main__':
                 dest='ratelimit', metavar='L', help='download rate limit (e.g. 50k or 44.6m)')
         parser.add_option('-a', '--batch-fle',
                 dest='batchfile', metavar='F', help='file containing URLs to download')
+        parser.add_option('-w', '--no-overwirites',
+                action='store_true', dest='nooverwrites', help='do not overwrite files', default=False)
         (opts, args) = parser.parse_args()
 
         # Batch file verification
@@ -1037,7 +1043,8 @@ if __name__ == '__main__':
                             or (opts.useliteral and u'%(title)s-%(id)s.%(ext)s')
                             or u'%(id)s.%(ext)s'),
                         'ignoreerrors': opts.ignoreerrors,
-                        'ratelimit':    opts.ratelimit,})
+                        'ratelimit':    opts.ratelimit,
+                        'nooverwrites': opts.nooverwrites,})
         fd.add_info_extractor(youtube_pl_ie)
         fd.add_info_extractor(metacafe_ie)
         fd.add_info_extractor(youtube_ie)
