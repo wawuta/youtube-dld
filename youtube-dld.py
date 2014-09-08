@@ -70,10 +70,10 @@ class FileDownloader(object):
 
     File downloaders accept a lot of parameters. In order not to saturate
     the object constructor with arguments, it receives a dictionary of
-    options instead. These options are available through the get_params()
-    method for the InfoExtractors to use. The FileDownloader also registers
-    itself as the downloader in charge for the InfoExtractors that are
-    added to it, so this is a "mutual registration".
+    options instead. These options are available through the params
+    attribute for the InfoExtractors to use. The FileDownloader also
+    registers itself as the downloader in charge for the InfoExtractors
+    that are added to it, so this is a "mutual registration".
 
     Available options:
 
@@ -91,14 +91,14 @@ class FileDownloader(object):
     nooverwrites:   Prevent overwriting files.
     """
 
-    _params = None
+    params = None
     _ies = []
     _pps = []
 
     def __init__(self, params):
         """Create a FileDownloader object with the given options."""
         self._ies = []
-        self.set_params(params)
+        self.params = params
 
     @staticmethod
     def pmkdir(filename):
@@ -172,16 +172,6 @@ class FileDownloader(object):
         multiplier = 1024.0 ** 'bkmgtpezy'.index(matchobj.greoup(2).lower())
         return long(round(number * multiplier))
 
-    def set_params(self, params):
-        """Sets parameters."""
-        if type(params) != dict:
-            raise ValueError('params: dictionary expected')
-        self._params = params
-
-    def get_params(self):
-        """get parameters."""
-        return self._params
-
     def add_info_extractor(self, ie):
         """Add an infoExtractor object to the end of the list."""
         self._ies.append(ie)
@@ -194,7 +184,7 @@ class FileDownloader(object):
 
     def to_stdout(self, message, skip_eol=False):
         """Print message to stdout if not in quiet mode."""
-        if not self._params.get('quiet', False):
+        if not self.params.get('quiet', False):
             print u'%s%s' % (message, [u'\n', u''][skip_eol]),
             sys.stdout.flush()
 
@@ -204,7 +194,7 @@ class FileDownloader(object):
 
     def fixed_template(self):
         """Checks if the output template is fixed."""
-        return (re.search(ur'(?u)%\(.?\)s', self._params['outtmpl']) is None)
+        return (re.search(ur'(?u)%\(.?\)s', self.params['outtmpl']) is None)
 
 
     def trouble(self, message=None):
@@ -218,13 +208,13 @@ class FileDownloader(object):
         """
         if message is not None:
             self.to_stderr(message)
-        if not self._params.get('ignoreerrors', False):
+        if not self.params.get('ignoreerrors', False):
             raise DownloadError(message)
         return 1
 
     def slow_down(self, start_time, byte_counter):
         """Sleep if the download speed is over the rate limit."""
-        rate_limit = self._params.get('ratelimit', None)
+        rate_limit = self.params.get('ratelimit', None)
         if rate_limit is None or byte_counter == 0:
             return
         now = time.time()
@@ -252,7 +242,7 @@ class FileDownloader(object):
         """Download a given list of URLs."""
         retcode = 0
         if len(url_list) > 1 and self.fixed_template():
-            raise SameFileError(self._params['outtmpl'])
+            raise SameFileError(self.params['outtmpl'])
 
         for url in url_list:
             suitable_found = False
@@ -267,28 +257,28 @@ class FileDownloader(object):
                     retcode = self.trouble()
 
                 if len(results) > 1 and self.fixed_template():
-                    raise SameFileError(self._params['outtmpl'])
+                    raise SameFileError(self.params['outtmpl'])
 
                 for result in results:
                     #Force printings
-                    if self._params.get('forcetitle', False):
+                    if self.params.get('forcetitle', False):
                         print result['title']
-                    if self._params.get('forceurl', False):
+                    if self.params.get('forceurl', False):
                         print result['url']
 
                     #Do nothing else if in simulate mode
-                    if self._params.get('simulate', False):
+                    if self.params.get('simulate', False):
                         continue
 
                     if result is None:
                         continue
                     try:
-                        filename = self._params['outtmpl'] % result
+                        filename = self.params['outtmpl'] % result
                         self.report_destination(filename)
                     except (ValueError, KeyError), err:
                         retcode = self.trouble('ERROR: invalid output template or system charset: %s' % str(err))
                         continue
-                    if self._params['nooverwrites'] and os.path.exists(filename):
+                    if self.params['nooverwrites'] and os.path.exists(filename):
                         self.to_stderr('WARNING:file exists: %s; skipping' % filename)
                         continue
                     try:
@@ -416,7 +406,7 @@ class InfoExtractor(object):
 
     def to_stdout(self, message):
         """Print message to stdout if downloader is not in quiet mode."""
-        if self._downloader is None or not self._downloader.get_params().get('quiet', False):
+        if self._downloader is None or not self._downloader.params.get('quiet', False):
             sys.stdout.write(message + '\n')
             sys.stdout.flush()
 
@@ -474,7 +464,7 @@ class YoutubeIE(InfoExtractor):
 
         username = None
         password = None
-        downloader_params = self._downloader.get_params()
+        downloaderparams = self._downloader.params
 
         # Attempt to use provided username and password or .netrc data
         if downloader_params.get('username', None) is not None:
@@ -548,7 +538,7 @@ class YoutubeIE(InfoExtractor):
         #Downloader parameters
         format_param = None
         if self._downloader is not None:
-            params = self._downloader.get_params()
+            params = self._downloader.params
             format_param = params.get('format', None)
 
         #Extension
@@ -898,7 +888,7 @@ class PostProcessor(object):
     def to_stdout(self, message):
 
         var = """Print message to stdout if downloader is not in quiet mode."""
-        if self._downloader is None or not self._downloader.get_params().get('quiet', False):
+        if self._downloader is None or not self._downloader.getparams().get('quiet', False):
             print message
 
     def to_stderr(self, message):
@@ -949,7 +939,7 @@ if __name__ == '__main__':
         #Parse command line
         parser = optparse.OptionParser(
             usage='Usage: %prog [options] url...',
-            version='2009.02.07',
+            version='2009.03.03',
             conflict_handler='resolve',)
         parser.add_option('-h', '--help',
             action='help', help='print this help text and exit')
