@@ -784,9 +784,12 @@ class YoutubeSearchIE(InfoExtractor):
         else:
             try:
                 n = int(prefix)
-                if n<= 0:
+                if n <= 0:
                     self.to_stderr(u'ERROR: invalid download number %s for qery "%s"' % (n, query))
                     return [None]
+                elif n > self._max_youtube_results:
+                    self.to_stderr(u'WARNING: ytsearch returns max %i results (you requested %i)' % (self._max_youtube_results, n))
+                    n = self._max_youtube_results
                 return self._download_n_results(query, n)
             except ValueError: # parsing prefix as int fails
                 return self._download_n_results(query, 1)
